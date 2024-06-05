@@ -110,17 +110,22 @@ app.post('/api/site/register', async (req, res) => {
         const { site, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         db.run("INSERT INTO sites (site, password) VALUES (?, ?)", [site, hashedPassword], function (err) {
+            if (err && err.errno === 19) { // Constraint violation error code
+                console.error(err);
+                return res.status(400).send("Site already exists");
+            }
             if (err) {
                 console.error(err);
-                return res.status(400).send("Username already exists");
+                return res.status(500).send("Error registering site");
             }
-            res.status(201).send("User registered successfully");
+            res.status(201).send("Site registered successfully");
         });
     } catch (error) {
         console.error(error);
-        res.status(500).send("Error registering user");
+        res.status(500).send("Error registering site");
     }
 });
+
 
 app.post('/api/site/login', async (req, res) => {
     try {
