@@ -157,3 +157,5 @@ Authenticates a site and grants access based on the provided session token.
    ```
 
    Response will contain the username.
+
+Thanks to AdrianoTech for helping me.
