@@ -110,22 +110,17 @@ app.post('/api/site/register', async (req, res) => {
         const { site, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         db.run("INSERT INTO sites (site, password) VALUES (?, ?)", [site, hashedPassword], function (err) {
-            if (err && err.errno === 19) { // Constraint violation error code
-                console.error(err);
-                return res.status(400).send("Site already exists");
-            }
             if (err) {
                 console.error(err);
-                return res.status(500).send("Error registering site");
+                return res.status(400).send("Username already exists");
             }
-            res.status(201).send("Site registered successfully");
+            res.status(201).send("User registered successfully");
         });
     } catch (error) {
         console.error(error);
-        res.status(500).send("Error registering site");
+        res.status(500).send("Error registering user");
     }
 });
-
 
 app.post('/api/site/login', async (req, res) => {
     try {
@@ -186,6 +181,82 @@ app.post('/api/site/secureaccess', async (req, res) => {
         res.status(500).send("Error logging in");
     }
 });
+
+app.post('/api/writeJson', (req, res) => {
+    try {
+        const { sessiontoken, website, data } = req.body;
+        const sessionpath = `sessions/${sessiontoken}.txt`;
+        const sessionfile = fs.readFileSync(sessionpath, 'utf8');
+        const parts = sessionfile.split('--');
+        const username = parts[2];
+        const filePath =`usercontent/${username}.json`;
+
+        // Read existing data from JSON file or create an empty object
+        let jsonData = {};
+        try {
+            const existingData = fs.readFileSync(filePath);
+            jsonData = JSON.parse(existingData);
+        } catch (err) {
+            // File doesn't exist or couldn't be read
+            console.error("Error reading JSON file:", err);
+        }
+        if (website !== parts[0]) {
+
+            return res.status(403).send("Access denied. Invalid token.");
+        }
+        // Update or add data for the website
+        jsonData[website] = data;
+
+        // Write updated data to JSON file
+        fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Error writing to JSON file");
+            }
+            fs.unlinkSync(sessionpath);
+            res.status(200).send(`Data written to ${username}.json under ${website} successfully`);
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error writing to JSON file");
+    }
+});
+
+app.post('/api/readJson', (req, res) => {
+    try {
+        const { sessiontoken, website } = req.body;
+        const sessionpath = `sessions/${sessiontoken}.txt`;
+        const sessionfile = fs.readFileSync(sessionpath, 'utf8');
+        const parts = sessionfile.split('--');
+        const username = parts[2];
+        const filePath = `usercontent/${username}.json`;
+        // Read data from JSON file
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Error reading JSON file");
+            }
+            try {
+                const jsonData = JSON.parse(data);
+                const websiteData = jsonData[website];
+                if (!websiteData) {
+                    return res.status(404).send("Website data not found");
+                }
+                fs.unlinkSync(sessionpath);
+                res.status(200).json(websiteData);
+            } catch (parseError) {
+                console.error(parseError);
+                res.status(500).send("Error parsing JSON data");
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error reading JSON file");
+    }
+});
+
+
+
 
 const PORT = 3333;
 app.listen(PORT, () => console.log(`Server in ascolto sulla porta ${PORT}`));
