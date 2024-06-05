@@ -21,12 +21,12 @@ const db = new sqlite3.Database('users.db');
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
+    username TEXT UNIQUE,
     password TEXT
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS sites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    site TEXT,
+    site TEXT UNIQUE,
     password TEXT
   )`);
 });
