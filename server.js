@@ -11,8 +11,6 @@ const jwtSecret = process.env.JWT_SECRET;
 
 
 
-
-
 const app = express();
 app.use(bodyParser.json());
 
