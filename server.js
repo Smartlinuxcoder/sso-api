@@ -97,6 +97,9 @@ app.post('/api/login', async (req, res) => {
             const hash = generateHash(session);
             const filePath = `sessions/${hash}.txt`;
             fs.writeFileSync(filePath, session);
+            setTimeout(() => {
+                fs.unlinkSync(filePath);
+            }, 10 * 60 * 1000); // 10 minutes in milliseconds
             res.status(200).json({ hash });
         });
     } catch (error) {
@@ -173,7 +176,6 @@ app.post('/api/site/secureaccess', async (req, res) => {
                 return res.status(403).send("Access denied. Invalid token.");
             }
             const username = parts[2];
-            fs.unlinkSync(filePath);
             res.status(200).json({ username });
         });
     } catch (error) {
@@ -213,7 +215,7 @@ app.post('/api/writeJson', (req, res) => {
                 console.error(err);
                 return res.status(500).send("Error writing to JSON file");
             }
-            fs.unlinkSync(sessionpath);
+
             res.status(200).send(`Data written to ${username}.json under ${website} successfully`);
         });
     } catch (error) {
@@ -242,7 +244,7 @@ app.post('/api/readJson', (req, res) => {
                 if (!websiteData) {
                     return res.status(404).send("Website data not found");
                 }
-                fs.unlinkSync(sessionpath);
+
                 res.status(200).json(websiteData);
             } catch (parseError) {
                 console.error(parseError);
