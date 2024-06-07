@@ -224,6 +224,62 @@ app.post('/api/writeJson', (req, res) => {
     }
 });
 
+
+app.post('/api/updateJson', (req, res) => {
+    try {
+        const { sessiontoken, website, data } = req.body;
+        const sessionpath = `sessions/${sessiontoken}.txt`;
+        const sessionfile = fs.readFileSync(sessionpath, 'utf8');
+        const parts = sessionfile.split('--');
+        const username = parts[2];
+        const filePath = `usercontent/${username}.json`;
+
+        // Read existing data from JSON file or create an empty object
+        let jsonData = {};
+        try {
+            const existingData = fs.readFileSync(filePath);
+            jsonData = JSON.parse(existingData);
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                // File doesn't exist, initialize jsonData
+                jsonData = {};
+            } else {
+                console.error("Error reading JSON file:", err);
+                return res.status(500).send("Error reading JSON file");
+            }
+        }
+
+        if (website !== parts[0]) {
+            return res.status(403).send("Access denied. Invalid token.");
+        }
+
+        // Merge incoming data with existing data
+        if (!jsonData[website]) {
+            jsonData[website] = data;
+        } else {
+            jsonData[website] = {
+                ...jsonData[website],
+                ...data
+            };
+        }
+
+        // Write updated data to JSON file
+        fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Error writing to JSON file");
+            }
+
+            res.status(200).send(`Data updated in ${username}.json under ${website} successfully`);
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error updating JSON file");
+    }
+});
+
+
+
 app.post('/api/readJson', (req, res) => {
     try {
         const { sessiontoken, website } = req.body;
