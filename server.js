@@ -225,6 +225,15 @@ app.post('/api/writeJson', (req, res) => {
 });
 
 
+const mergeDeep = (target, source) => {
+    for (const key of Object.keys(source)) {
+        if (source[key] instanceof Object && key in target) {
+            Object.assign(source[key], mergeDeep(target[key], source[key]));
+        }
+    }
+    return { ...target, ...source };
+};
+
 app.post('/api/updateJson', (req, res) => {
     try {
         const { sessiontoken, website, data } = req.body;
@@ -257,10 +266,7 @@ app.post('/api/updateJson', (req, res) => {
         if (!jsonData[website]) {
             jsonData[website] = data;
         } else {
-            jsonData[website] = {
-                ...jsonData[website],
-                ...data
-            };
+            jsonData[website] = mergeDeep(jsonData[website], data);
         }
 
         // Write updated data to JSON file
