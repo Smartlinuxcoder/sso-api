@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 require('dotenv').config();
+const cors = require('cors');
+
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -13,7 +15,7 @@ const jwtSecret = process.env.JWT_SECRET;
 
 const app = express();
 app.use(bodyParser.json());
-
+app.use(cors());
 // Inizializza il database SQLite3
 const db = new sqlite3.Database('users.db');
 
